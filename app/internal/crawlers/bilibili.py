@@ -1,34 +1,37 @@
-from playwright.sync_api import sync_playwright
+import asyncio
+
+from playwright.async_api import async_playwright
 
 
-def popular():
+async def popular():
     result = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
-        page.goto("https://www.bilibili.com/v/popular/all")
-        page.wait_for_load_state("networkidle")
-        videos = page.query_selector_all(
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=False)
+        page = await browser.new_page()
+        await page.goto(
+            "https://www.bilibili.com/v/popular/all", wait_until="networkidle"
+        )
+        videos = await page.query_selector_all(
             "#app > div > div.popular-video-container.popular-list > div.flow-loader > ul > div"
         )
         for video in videos:
-            cover = video.query_selector("div.video-card__content > a > img")
-            info = video.query_selector("div.video-card__info")
-            title = info.query_selector("p")
-            creator = info.query_selector("div > span.up-name > span")
-            play_times = info.query_selector("div > p > span.play-text")
-            comment_times = info.query_selector("div > p > span.like-text")
+            cover = await video.query_selector("div.video-card__content > a > img")
+            info = await video.query_selector("div.video-card__info")
+            title = await info.query_selector("p")
+            creator = await info.query_selector("div > span.up-name > span")
+            play_times = await info.query_selector("div > p > span.play-text")
+            comment_times = await info.query_selector("div > p > span.like-text")
             result.append(
                 {
-                    "cover": "https:" + cover.get_attribute("src").strip(),
-                    "title": title.text_content().strip(),
-                    "creator": creator.text_content().strip(),
-                    "play_times": play_times.text_content().strip(),
-                    "comment_times": comment_times.text_content().strip(),
+                    "cover": "https:" + (await cover.get_attribute("src")).strip(),
+                    "title": (await title.text_content()).strip(),
+                    "creator": (await creator.text_content()).strip(),
+                    "play_times": (await play_times.text_content()).strip(),
+                    "comment_times": (await comment_times.text_content()).strip(),
                 }
             )
     return result
 
 
 if __name__ == "__main__":
-    print(popular())
+    print(asyncio.run(popular()))
